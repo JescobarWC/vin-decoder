@@ -1,16 +1,15 @@
 
-# 🔍 VIN Decoder Demo - World Cars
+# VIN Decoder - World Cars
 
-Demo interna para consultar la ficha técnica de un coche introduciendo el VIN.
+App React con integración real con la API de VINDecoder.eu.
 
-## 🚀 Despliegue instantáneo en Vercel
+## 🚀 Cómo usar
 
-Haz clic aquí para desplegar esta demo:
+```bash
+npm install
+npm run dev
+```
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/JescobarWC/vin-decoder-demo)
+## 🌍 Despliegue
 
-## 📦 Tecnologías usadas
-
-- React (JSX)
-- Simulación de datos técnicos de coche
-- JSON exportable
+Puedes desplegar este proyecto directamente en Vercel o cualquier otro servicio compatible con Vite + React.
