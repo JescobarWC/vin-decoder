@@ -12,12 +12,17 @@ export default function VinDecoderDemo() {
     try {
       const res = await fetch(`/api/vin?vin=${vin}`);
       const data = await res.json();
-      if (data && data.success && data.specification) {
+      console.log("Respuesta VINDecoder:", data);
+
+      if (data?.specification && Object.keys(data.specification).length > 0) {
         setCarData(data.specification);
+      } else if (data.error) {
+        alert(`Error desde el servidor: ${data.error}`);
       } else {
         alert("No se pudieron obtener datos del VIN");
       }
     } catch (err) {
+      console.error("Error en la llamada:", err);
       alert("Error consultando el VIN");
     } finally {
       setLoading(false);
