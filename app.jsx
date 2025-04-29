@@ -10,14 +10,14 @@ export default function VinDecoderDemo() {
     if (!vin || vin.length < 10) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/vin?vin=${vin}`);
+      const res = await fetch(`https://api.vindecoder.eu/2.0/decode_vin?vin=${vin}&user=bd5626317e2f&secret=59f8372fc4&lang=es&output=json`);
       const data = await res.json();
       console.log("Respuesta VINDecoder:", data);
 
       if (data?.specification && Object.keys(data.specification).length > 0) {
         setCarData(data.specification);
       } else if (data.error) {
-        alert(`Error desde el servidor: ${data.error}`);
+        alert(`Error desde VINDecoder: ${data.error}`);
       } else {
         alert("No se pudieron obtener datos del VIN");
       }
@@ -46,7 +46,7 @@ export default function VinDecoderDemo() {
       <div style={{ textAlign: "center", marginBottom: "2rem" }}>
         <img src="https://www.worldcars.es/images/logo.png" alt="World Cars" style={{ height: "70px" }} />
         <h1>Consulta Técnica por VIN</h1>
-        <p>Herramienta interna de World Cars conectada con VINDecoder.eu (proxy)</p>
+        <p>Herramienta interna de World Cars conectada directamente con VINDecoder.eu</p>
       </div>
 
       <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
