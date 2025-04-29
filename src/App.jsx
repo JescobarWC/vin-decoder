@@ -10,7 +10,7 @@ export default function VinDecoderDemo() {
     if (!vin || vin.length < 10) return;
     setLoading(true);
     try {
-      const res = await fetch(`https://api.vindecoder.eu/2.0/decode_vin?vin=${vin}&user=bd5626317e2f&secret=59f8372fc4&lang=es&output=json`);
+      const res = await fetch(`/api/vin?vin=${vin}`);
       const data = await res.json();
       if (data && data.success && data.specification) {
         setCarData(data.specification);
@@ -41,7 +41,7 @@ export default function VinDecoderDemo() {
       <div style={{ textAlign: "center", marginBottom: "2rem" }}>
         <img src="https://www.worldcars.es/images/logo.png" alt="World Cars" style={{ height: "70px" }} />
         <h1>Consulta Técnica por VIN</h1>
-        <p>Herramienta interna de World Cars conectada con VINDecoder.eu</p>
+        <p>Herramienta interna de World Cars conectada con VINDecoder.eu (proxy)</p>
       </div>
 
       <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
@@ -67,7 +67,7 @@ export default function VinDecoderDemo() {
             style={{ width: "100%", marginTop: "1rem", height: "200px", fontFamily: "monospace" }}
           />
           <div style={{ textAlign: "right", marginTop: "1rem" }}>
-            <button onClick={handleEnviarAWC} disabled={submitted} style={{ padding: "0.5rem 1rem", marginRight: "0.5rem" }}>
+            <button onClick={handleEnviarAWC} disabled={submitted} style={{ padding: "0.5rem 1rem" }}>
               {submitted ? "Enviado ✔" : "Enviar a web World Cars"}
             </button>
           </div>
