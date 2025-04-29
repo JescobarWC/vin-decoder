@@ -9,72 +9,84 @@ export default function VinDecoderDemo() {
   const [vin, setVin] = useState("")
   const [carData, setCarData] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
   const handleCheckVin = async () => {
+    if (!vin || vin.length < 10) return
     setLoading(true)
-    // Simulamos respuesta de SilverDAT o API externa
-    setTimeout(() => {
-      setCarData({
-        marca: "Renault",
-        modelo: "Clio",
-        version: "Business Blue dCi 85 CV",
-        combustible: "Diesel",
-        emisiones: "95 g/km",
-        motor: "1.5 dCi 85 CV",
-        transmision: "Manual",
-        carroceria: "Berlina 5 puertas",
-        equipamiento: [
-          "Control de crucero",
-          "Sensor de aparcamiento trasero",
-          "Pantalla táctil 7''",
-          "Bluetooth y USB",
-        ],
-      })
+    try {
+      const res = await fetch(`https://api.vindecoder.eu/2.0/decode_vin?vin=${vin}&user=bd5626317e2f&secret=59f8372fc4&lang=es&output=json`)
+      const data = await res.json()
+      if (data && data.success && data.specification) {
+        setCarData(data.specification)
+      } else {
+        alert("No se pudieron obtener datos del VIN")
+      }
+    } catch (err) {
+      alert("Error consultando el VIN")
+    } finally {
       setLoading(false)
-    }, 1000)
+      setSubmitted(false)
+    }
+  }
+
+  const handleEnviarAWC = async () => {
+    if (!carData) return
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(carData, null, 2))
+      setSubmitted(true)
+      alert("Datos copiados. Puedes pegarlos en la web de World Cars.")
+    } catch (err) {
+      alert("No se pudieron copiar los datos")
+    }
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">🔍 Consulta Técnica por VIN</h1>
-      <div className="flex gap-2 mb-4">
-        <Input
-          value={vin}
-          onChange={(e) => setVin(e.target.value)}
-          placeholder="Introduce el VIN"
-        />
-        <Button onClick={handleCheckVin} disabled={loading}>
-          {loading ? "Buscando..." : "Consultar"}
-        </Button>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 p-4">
+      <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-8">
+          <img src="https://www.worldcars.es/images/logo.png" alt="World Cars" className="mx-auto h-16 mb-2" />
+          <h1 className="text-3xl font-bold text-slate-800">Consulta Técnica por VIN</h1>
+          <p className="text-slate-600">Herramienta interna de World Cars conectada con VINDecoder.eu</p>
+        </div>
 
-      {carData && (
-        <Card className="mt-4">
-          <CardContent className="space-y-2">
-            <p><strong>Marca:</strong> {carData.marca}</p>
-            <p><strong>Modelo:</strong> {carData.modelo}</p>
-            <p><strong>Versión:</strong> {carData.version}</p>
-            <p><strong>Combustible:</strong> {carData.combustible}</p>
-            <p><strong>Motor:</strong> {carData.motor}</p>
-            <p><strong>Transmisión:</strong> {carData.transmision}</p>
-            <p><strong>Carrocería:</strong> {carData.carroceria}</p>
-            <p><strong>Emisiones:</strong> {carData.emisiones}</p>
-            <p><strong>Equipamiento destacado:</strong></p>
-            <ul className="list-disc list-inside">
-              {carData.equipamiento.map((item, idx) => (
-                <li key={idx}>{item}</li>
+        <div className="flex gap-2 mb-4">
+          <Input
+            value={vin}
+            onChange={(e) => setVin(e.target.value)}
+            placeholder="Introduce el VIN"
+            className="flex-1"
+          />
+          <Button onClick={handleCheckVin} disabled={loading}>
+            {loading ? "Buscando..." : "Consultar"}
+          </Button>
+        </div>
+
+        {carData && (
+          <Card className="bg-white shadow-xl rounded-2xl p-4">
+            <CardContent className="space-y-2">
+              {Object.entries(carData).map(([key, value]) => (
+                <p key={key}><strong>{key}:</strong> {String(value)}</p>
               ))}
-            </ul>
-            <div className="mt-4">
-              <Textarea
-                value={JSON.stringify(carData, null, 2)}
-                readOnly
-                className="text-sm"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              <div className="mt-4">
+                <Textarea
+                  value={JSON.stringify(carData, null, 2)}
+                  readOnly
+                  className="text-sm font-mono"
+                />
+              </div>
+              <div className="text-right mt-4 space-x-2">
+                <Button variant="outline" onClick={() => navigator.clipboard.writeText(JSON.stringify(carData, null, 2))}>
+                  Copiar JSON
+                </Button>
+                <Button onClick={handleEnviarAWC} disabled={submitted}>
+                  {submitted ? "Enviado ✔" : "Enviar a web World Cars"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   )
 }
