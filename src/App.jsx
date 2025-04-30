@@ -6,24 +6,37 @@ export default function VinDecoderDemo() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const sha1 = async (str) => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    const hashBuffer = await crypto.subtle.digest("SHA-1", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("").substring(0, 10);
+  };
+
   const handleCheckVin = async () => {
     if (!vin || vin.length < 10) return;
     setLoading(true);
+
+    const apiKey = "bd5626317e2f";
+    const secretKey = "59f8372fc4";
+    const method = "decode";
+    const controlString = `${vin}|${method}|${apiKey}|${secretKey}`;
+    const controlSum = await sha1(controlString);
+    const url = `https://api.vindecoder.eu/3.2/${apiKey}/${controlSum}/decode/${vin}.json`;
+
     try {
-      const res = await fetch(`https://api.vindecoder.eu/2.0/decode_vin?vin=${vin}&user=bd5626317e2f&secret=59f8372fc4&lang=es&output=json`);
+      const res = await fetch(url);
       const data = await res.json();
       console.log("Respuesta VINDecoder:", data);
-
-      if (data?.specification && Object.keys(data.specification).length > 0) {
-        setCarData(data.specification);
-      } else if (data.error) {
-        alert(`Error desde VINDecoder: ${data.error}`);
+      if (data && data.decode) {
+        setCarData(data.decode);
       } else {
         alert("No se pudieron obtener datos del VIN");
       }
     } catch (err) {
-      console.error("Error en la llamada:", err);
-      alert("Error consultando el VIN");
+      console.error("Error consultando el VIN:", err);
+      alert("Error al contactar con VINDecoder");
     } finally {
       setLoading(false);
       setSubmitted(false);
@@ -46,7 +59,7 @@ export default function VinDecoderDemo() {
       <div style={{ textAlign: "center", marginBottom: "2rem" }}>
         <img src="https://www.worldcars.es/images/logo.png" alt="World Cars" style={{ height: "70px" }} />
         <h1>Consulta Técnica por VIN</h1>
-        <p>Herramienta interna de World Cars conectada directamente con VINDecoder.eu</p>
+        <p>Integración con API 3.2 de VINDecoder.eu</p>
       </div>
 
       <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
