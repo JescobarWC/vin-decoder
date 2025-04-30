@@ -3,6 +3,7 @@ import { useState } from "react";
 export default function VinDecoderDemo() {
   const [vin, setVin] = useState("");
   const [carData, setCarData] = useState(null);
+  const [oemData, setOemData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -14,12 +15,12 @@ export default function VinDecoderDemo() {
     return hashArray.map(b => b.toString(16).padStart(2, "0")).join("").substring(0, 10);
   };
 
+  const apiKey = "bd5626317e2f";
+  const secretKey = "59f8372fc4";
+
   const handleCheckVin = async () => {
     if (!vin || vin.length < 10) return;
     setLoading(true);
-
-    const apiKey = "bd5626317e2f";
-    const secretKey = "59f8372fc4";
     const method = "decode";
     const controlString = `${vin}|${method}|${apiKey}|${secretKey}`;
     const controlSum = await sha1(controlString);
@@ -28,25 +29,50 @@ export default function VinDecoderDemo() {
     try {
       const res = await fetch(url);
       const data = await res.json();
-      console.log("Respuesta VINDecoder:", data);
+      console.log("Ficha técnica:", data);
       if (data && data.decode) {
         setCarData(data.decode);
       } else {
-        alert("No se pudieron obtener datos del VIN");
+        alert("No se pudieron obtener datos técnicos.");
       }
     } catch (err) {
-      console.error("Error consultando el VIN:", err);
-      alert("Error al contactar con VINDecoder");
+      console.error("Error técnico:", err);
+      alert("Error consultando la ficha técnica");
     } finally {
       setLoading(false);
       setSubmitted(false);
     }
   };
 
-  const handleEnviarAWC = async () => {
-    if (!carData) return;
+  const handleOEMLookup = async () => {
+    if (!vin || vin.length < 10) return;
+    setLoading(true);
+    const method = "lookup";
+    const controlString = `${vin}|${method}|${apiKey}|${secretKey}`;
+    const controlSum = await sha1(controlString);
+    const url = `https://api.vindecoder.eu/3.2/${apiKey}/${controlSum}/decode/lookup/${vin}.json`;
+
     try {
-      await navigator.clipboard.writeText(JSON.stringify(carData, null, 2));
+      const res = await fetch(url);
+      const data = await res.json();
+      console.log("Datos OEM:", data);
+      if (data && data.lookup) {
+        setOemData(data.lookup);
+      } else {
+        alert("No se encontraron datos OEM.");
+      }
+    } catch (err) {
+      console.error("Error OEM:", err);
+      alert("Error consultando el equipamiento OEM");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEnviarAWC = async () => {
+    const combined = { fichaTecnica: carData, equipamientoOEM: oemData };
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(combined, null, 2));
       setSubmitted(true);
       alert("Datos copiados. Puedes pegarlos en la web de World Cars.");
     } catch (err) {
@@ -54,12 +80,34 @@ export default function VinDecoderDemo() {
     }
   };
 
+  const renderData = (data, title) => (
+    <div style={{ background: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", marginTop: "2rem" }}>
+      <h3>{title}</h3>
+      {Array.isArray(data)
+        ? data.map((item, index) => (
+            <div key={index} style={{ marginBottom: "1rem" }}>
+              <h4>🔹 Elemento {index + 1}</h4>
+              {Object.entries(item).map(([key, value]) => (
+                <p key={key}>
+                  <strong>{key}:</strong> {typeof value === "object" ? JSON.stringify(value) : String(value)}
+                </p>
+              ))}
+            </div>
+          ))
+        : Object.entries(data).map(([key, value]) => (
+            <p key={key}>
+              <strong>{key}:</strong> {typeof value === "object" ? JSON.stringify(value) : String(value)}
+            </p>
+          ))}
+    </div>
+  );
+
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
       <div style={{ textAlign: "center", marginBottom: "2rem" }}>
         <img src="https://www.worldcars.es/images/logo.png" alt="World Cars" style={{ height: "70px" }} />
-        <h1>Consulta Técnica por VIN</h1>
-        <p>Integración con API 3.2 de VINDecoder.eu</p>
+        <h1>Consulta por VIN</h1>
+        <p>Ficha técnica + Equipamiento OEM (VINDecoder.eu API 3.2)</p>
       </div>
 
       <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
@@ -70,38 +118,21 @@ export default function VinDecoderDemo() {
           style={{ flex: 1, padding: "0.5rem" }}
         />
         <button onClick={handleCheckVin} disabled={loading} style={{ padding: "0.5rem 1rem" }}>
-          {loading ? "Buscando..." : "Consultar"}
+          Ficha técnica
+        </button>
+        <button onClick={handleOEMLookup} disabled={loading} style={{ padding: "0.5rem 1rem" }}>
+          Equipamiento OEM
         </button>
       </div>
 
-      {carData && (
-        <div style={{ background: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-          {Array.isArray(carData)
-            ? carData.map((item, index) => (
-                <div key={index} style={{ marginBottom: "1rem" }}>
-                  <h4>🔹 Ficha {index + 1}</h4>
-                  {Object.entries(item).map(([key, value]) => (
-                    <p key={key}>
-                      <strong>{key}:</strong> {typeof value === "object" ? JSON.stringify(value) : String(value)}
-                    </p>
-                  ))}
-                </div>
-              ))
-            : Object.entries(carData).map(([key, value]) => (
-                <p key={key}>
-                  <strong>{key}:</strong> {typeof value === "object" ? JSON.stringify(value) : String(value)}
-                </p>
-              ))}
-          <textarea
-            value={JSON.stringify(carData, null, 2)}
-            readOnly
-            style={{ width: "100%", marginTop: "1rem", height: "200px", fontFamily: "monospace" }}
-          />
-          <div style={{ textAlign: "right", marginTop: "1rem" }}>
-            <button onClick={handleEnviarAWC} disabled={submitted} style={{ padding: "0.5rem 1rem" }}>
-              {submitted ? "Enviado ✔" : "Enviar a web World Cars"}
-            </button>
-          </div>
+      {carData && renderData(carData, "Ficha técnica")}
+      {oemData && renderData(oemData, "Equipamiento OEM")}
+
+      {(carData || oemData) && (
+        <div style={{ textAlign: "right", marginTop: "1rem" }}>
+          <button onClick={handleEnviarAWC} disabled={submitted} style={{ padding: "0.5rem 1rem" }}>
+            {submitted ? "Enviado ✔" : "Enviar a web World Cars"}
+          </button>
         </div>
       )}
     </div>
