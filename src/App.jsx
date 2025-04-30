@@ -76,9 +76,22 @@ export default function VinDecoderDemo() {
 
       {carData && (
         <div style={{ background: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-          {Object.entries(carData).map(([key, value]) => (
-            <p key={key}><strong>{key}:</strong> {String(value)}</p>
-          ))}
+          {Array.isArray(carData)
+            ? carData.map((item, index) => (
+                <div key={index} style={{ marginBottom: "1rem" }}>
+                  <h4>🔹 Ficha {index + 1}</h4>
+                  {Object.entries(item).map(([key, value]) => (
+                    <p key={key}>
+                      <strong>{key}:</strong> {typeof value === "object" ? JSON.stringify(value) : String(value)}
+                    </p>
+                  ))}
+                </div>
+              ))
+            : Object.entries(carData).map(([key, value]) => (
+                <p key={key}>
+                  <strong>{key}:</strong> {typeof value === "object" ? JSON.stringify(value) : String(value)}
+                </p>
+              ))}
           <textarea
             value={JSON.stringify(carData, null, 2)}
             readOnly
